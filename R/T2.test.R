@@ -1,6 +1,6 @@
 T2.test <- function(x, ...) UseMethod("T2.test")
 
-T2.test.default <- function(x, y = NULL, mu = 0, conf.level = 0.95, method=c("c", "mcd"), ...)
+T2.test.default <- function(x, y = NULL, mu = 0, conf.level = NULL, method=c("c", "mcd"), ...)
 {
     xcall <- match.call()
     method <- match.arg(method)
@@ -86,18 +86,19 @@ T2.test.default <- function(x, y = NULL, mu = 0, conf.level = 0.95, method=c("c"
             stop(paste("Invalid method=",method))
 
         cutoff.alpha <- qf(1-alpha, p, q)
+        
         ## simultaneous confidence intervals for the components of mu
-        conf.int <- matrix(1:(2*p), nrow=p)
-        for(i in 1:p) {
-            conf.int[i,1] <- xbar[i] - sqrt(1/n*d*qf(1-alpha, p, q) * V[i,i])
-            conf.int[i,2] <- xbar[i] + sqrt(1/n*d*qf(1-alpha, p, q) * V[i,i])
+        if(is.null(conf.level)){
+            conf.int <- matrix(1:(2*p), nrow=p)
+            for(i in 1:p) {
+                conf.int[i,1] <- xbar[i] - sqrt(1/n*d*qf(1-alpha, p, q) * V[i,i])
+                conf.int[i,2] <- xbar[i] + sqrt(1/n*d*qf(1-alpha, p, q) * V[i,i])
+            }
+            dimnames(conf.int) <- list(dimnames(x)[[2]], c("Lower bound","Upper bound"))
+            attr(conf.int,"conf.level") <- conf.level
         }
-        dimnames(conf.int) <- list(dimnames(x)[[2]], c("Lower bound","Upper bound"))
-        attr(conf.int,"conf.level") <- conf.level
 
-        ## switch off the confidence intervals, since 'htest'
-        ## does not know how to print them
-        conf.int <- NULL
+
     } else {
         if(method != "c")
             stop("Robust two-sample test not yet implemeted!")
